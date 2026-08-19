@@ -1,9 +1,7 @@
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
-const { spawn } = require('child_process');
 
 let mainWindow;
-let serverProcess;
 
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -16,21 +14,18 @@ function createWindow() {
         }
     });
 
-    // Charge ton interface HTML
     mainWindow.loadFile('index-lite.html');
 }
 
-// Lancement automatique de server.js en arrière-plan
-function startServer() {
-    const serverPath = path.join(__dirname, 'server.js');
-    serverProcess = spawn('node', [serverPath], {
-        detached: false,
-        stdio: 'ignore'
-    });
-}
-
 app.whenReady().then(() => {
-    startServer();
+    // Lancement du serveur Express interne directement dans Electron
+    try {
+        require('./server.js');
+        console.log("Serveur relais intégré démarré avec succès.");
+    } catch (err) {
+        console.error("Erreur lors du démarrage du serveur relais :", err);
+    }
+
     createWindow();
 
     app.on('activate', () => {
@@ -39,6 +34,5 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
-    if (serverProcess) serverProcess.kill();
     if (process.platform !== 'darwin') app.quit();
 });
