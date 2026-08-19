@@ -16,11 +16,29 @@
         log("[ELF] Bouton 'Injecter l'ELF' cliqué.");
 
         const elfSelect = document.getElementById('elf-select');
-        const elfUrl = elfSelect ? elfSelect.value : null;
-
-        if (!elfUrl) {
+        if (!elfSelect || !elfSelect.value) {
             log("[ELF ERREUR] Veuillez sélectionner un payload ELF dans la liste.");
             alert("Veuillez sélectionner un payload ELF.");
+            return;
+        }
+
+        let elfUrl = elfSelect.value;
+
+        // Si la valeur est un ID/Index (ex: "22") ou un attribut data-url
+        const selectedOption = elfSelect.options[elfSelect.selectedIndex];
+        if (selectedOption && selectedOption.dataset && selectedOption.dataset.url) {
+            elfUrl = selectedOption.dataset.url;
+        } else if (typeof window.elfSourcesData !== 'undefined') {
+            // Recherche dans le tableau global des sources si présent
+            const foundItem = window.elfSourcesData.find(item => String(item.id) === String(elfUrl));
+            if (foundItem && foundItem.url) {
+                elfUrl = foundItem.url;
+            }
+        }
+
+        // Vérification si elfUrl est bien une URL valide
+        if (!elfUrl.startsWith('http://') && !elfUrl.startsWith('https://') && !elfUrl.startsWith('./') && !elfUrl.startsWith('/')) {
+            log(`[ELF ERREUR] L'élément sélectionné ("${elfUrl}") n'est pas une URL de fichier valide.`);
             return;
         }
 
@@ -31,7 +49,6 @@
         let ps5Ip = ipInput ? ipInput.value.trim() : '';
         const ps5Port = portInput ? portInput.value.trim() : '9021';
 
-        // Si l'IP est vide ou sur localhost depuis la PS5, on pointe sur 127.0.0.1
         if (!ps5Ip || ps5Ip === 'localhost') {
             ps5Ip = '127.0.0.1';
         }
@@ -79,7 +96,7 @@
                 log('[ELF SUCCÈS] Payload injecté avec succès via WebSocket direct !');
 
             } catch (wsErr) {
-                log(`[ELF WS] Échec WebSocket direct. Tentative via le serveur relais local...`);
+                log(`[ELF WS] Échec WebSocket direct. Bascule sur le relais local (server.js)...`);
             }
 
             // 3. Tentative #2 : Relais Node.js (depuis PC)
@@ -112,9 +129,6 @@
         if (btnSendElf) {
             btnSendElf.removeEventListener('click', handleElfSend);
             btnSendElf.addEventListener('click', handleElfSend);
-            console.log("[ELF] Événement attaché au bouton #btn-send-elf.");
-        } else {
-            console.warn("[ELF] Bouton #btn-send-elf introuvable.");
         }
     }
 
