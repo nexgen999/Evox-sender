@@ -3,152 +3,136 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PS5 Payload Sender</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #121212;
-            color: #ffffff;
-            padding: 20px;
-        }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: #1e1e1e;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-        }
-        h1, h2 { color: #0070d1; }
-        label { display: block; margin-top: 10px; font-weight: bold; }
-        input[type="text"], input[type="file"] {
-            width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            border-radius: 4px;
-            border: 1px solid #333;
-            background: #2a2a2a;
-            color: #fff;
-            box-sizing: border-box;
-        }
-        button {
-            margin-top: 15px;
-            padding: 12px 20px;
-            width: 100%;
-            background-color: #0070d1;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        button:hover { background-color: #005bb5; }
-        .log-box {
-            margin-top: 20px;
-            padding: 10px;
-            background: #000;
-            color: #00ff00;
-            font-family: monospace;
-            border-radius: 4px;
-            min-height: 100px;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-    </style>
+    <title>PS5 ELF & PKG Manager</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="container">
-    <h1>PS5 Payload Sender</h1>
-    
-    <label for="ps5Ip">Adresse IP PS5 :</label>
-    <input type="text" id="ps5Ip" value="127.0.0.1" placeholder="127.0.0.1 ou 192.168.1.X">
+    <h1 class="title">PS5 ELF & PKG Manager</h1>
 
-    <h2>Envoi de fichier ELF</h2>
-    <input type="file" id="elfFile" accept=".elf,.bin">
-    <button onclick="triggerElfSend()">Envoyer le payload ELF</button>
+    <!-- Barre de navigation des onglets -->
+    <div class="tabs-nav">
+        <button id="elf-tab-btn" class="tab-btn active" onclick="switchTab('elf-tab', this)">ELF Sender</button>
+        <button id="pkg-tab-btn" class="tab-btn" onclick="switchTab('pkg-tab', this)">PKG Sender</button>
+        <button id="config-tab-btn" class="tab-btn" onclick="switchTab('config-tab', this)">Configuration</button>
+    </div>
 
-    <h2>Journal de bord</h2>
-    <div id="logBox" class="log-box">Prêt.</div>
+    <!-- Vue 1 : ELF Sender -->
+    <div id="elf-tab" class="tab-content active">
+        <div class="card">
+            <div class="card-title">Envoyer un Payload (ELF)</div>
+            
+            <div class="form-group">
+                <label for="elf-source-select">Source des Payloads</label>
+                <select id="elf-source-select"><option value="">Chargement des sources...</option></select>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="elf-category-select">1. Catégorie</label>
+                    <select id="elf-category-select">
+                        <option value="all">-- Toutes les catégories --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="elf-select">2. Payload (ELF)</label>
+                    <select id="elf-select"><option value="">-- Sélectionnez une source --</option></select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Description</label>
+                <div id="elf-desc" class="desc-box">Sélectionnez un payload pour voir sa description.</div>
+            </div>
+
+            <button id="btn-send-elf" class="btn-action">Injecter l'ELF</button>
+        </div>
+    </div>
+
+    <!-- Vue 2 : PKG Sender -->
+    <div id="pkg-tab" class="tab-content">
+        <div class="card">
+            <div class="card-title">Installer un Package (PKG)</div>
+            
+            <div class="form-group">
+                <label for="pkg-source-select">Source des Packages</label>
+                <select id="pkg-source-select"><option value="">Chargement des sources...</option></select>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="pkg-category-select">1. Catégorie</label>
+                    <select id="pkg-category-select">
+                        <option value="all">-- Toutes les catégories --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="pkg-select">2. Package (PKG)</label>
+                    <select id="pkg-select"><option value="">-- Sélectionnez une source --</option></select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Description</label>
+                <div id="pkg-desc" class="desc-box">Sélectionnez un package pour voir sa description.</div>
+            </div>
+
+            <button id="btn-send-pkg" class="btn-action">Installer le PKG</button>
+        </div>
+    </div>
+
+    <!-- Vue 3 : Configuration -->
+    <div id="config-tab" class="tab-content">
+        <div class="card">
+            <div class="card-title">Configuration PS5 & Réseau</div>
+            
+            <div class="form-group">
+                <label for="ps5-ip">Adresse IP de la console PS5</label>
+                <div class="input-with-btn">
+                    <input type="text" id="ps5-ip" placeholder="ex: 192.168.1.50">
+                    <button id="btn-autodetect-ip" class="btn-secondary">Détecter l'IP</button>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="elf-port-default">Port par défaut ELF (elfldr)</label>
+                    <input type="text" id="elf-port-default" value="9021">
+                </div>
+                <div class="form-group">
+                    <label for="pkg-port-default">Port par défaut PKG (Direct PKG Installer)</label>
+                    <input type="text" id="pkg-port-default" value="12800">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Console de statut permanente -->
+    <div class="card">
+        <div class="console-header">
+            <div class="card-title" style="margin:0;">Console de statut</div>
+            <button id="btn-clear-console" class="btn-clear">Effacer</button>
+        </div>
+        <div id="status-console" class="console-box"></div>
+    </div>
 </div>
 
+<!-- Scripts ordonnés par dépendances -->
+<script src="js/logger.js"></script>
+<script src="js/config.js"></script>
+<script src="js/sources.js"></script>
+<script src="js/elf.js"></script>
+<script src="js/pkg.js"></script>
+
 <script>
-    function log(message) {
-        const box = document.getElementById('logBox');
-        box.textContent += "\n" + message;
-        box.scrollTop = box.scrollHeight;
-        console.log(message);
-    }
-
-    // 1. Connexion binaire directe par WebSocket (Exécutée sur le navigateur PS5)
-    async function sendElfDirectWS(ps5Ip, arrayBuffer) {
-        return new Promise((resolve, reject) => {
-            // Si on tourne dans le navigateur PS5, 127.0.0.1 cible la console elle-même
-            const targetIp = (ps5Ip === 'localhost' || !ps5Ip) ? '127.0.0.1' : ps5Ip;
-            const wsUrl = `ws://${targetIp}:9021`;
-
-            log(`[WS Direct] Tentative de connexion vers ${wsUrl}...`);
-            const ws = new WebSocket(wsUrl);
-            ws.binaryType = 'arraybuffer';
-
-            ws.onopen = () => {
-                log('[WS Direct] Connecté au port 9021 ! Envoi du payload...');
-                ws.send(arrayBuffer);
-                resolve("Payload ELF transmis avec succès en direct (WebSocket) !");
-                setTimeout(() => ws.close(), 1000);
-            };
-
-            ws.onerror = (err) => {
-                reject(new Error("Échec de connexion WebSocket au port 9021."));
-            };
-        });
-    }
-
-    // 2. Gestionnaire d'envoi hybride (WebSocket Direct puis Relais Node.js)
-    async function triggerElfSend() {
-        const ipInput = document.getElementById('ps5Ip').value.trim();
-        const fileInput = document.getElementById('elfFile');
-
-        if (!fileInput.files.length) {
-            alert("Veuillez sélectionner un fichier ELF.");
-            return;
-        }
-
-        const file = fileInput.files[0];
-        const arrayBuffer = await file.arrayBuffer();
-
-        try {
-            // Tentative 1 : Envoi WebSocket direct (Idéal sur la console/GitHub Pages)
-            const wsResult = await sendElfDirectWS(ipInput, arrayBuffer);
-            log(`[SUCCÈS] ${wsResult}`);
-            alert(wsResult);
-        } catch (wsErr) {
-            log(`[AVERTISSEMENT] ${wsErr.message}`);
-            log("[RELAIS] Bascule sur le serveur local server.js (http://localhost:3000)...");
-
-            // Tentative 2 : Fallback via le serveur relais server.js
-            try {
-                const response = await fetch(`http://localhost:3000/send-elf?ip=${ipInput}&port=9021`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/octet-stream' },
-                    body: arrayBuffer
-                });
-
-                const text = await response.text();
-                if (response.ok) {
-                    log(`[SUCCÈS RELAIS] ${text}`);
-                    alert("Succès via le relais Node.js !");
-                } else {
-                    log(`[ERREUR RELAIS] ${text}`);
-                    alert(`Erreur du serveur relais : ${text}`);
-                }
-            } catch (fetchErr) {
-                log("[ERREUR CRITIQUE] Ni le WebSocket direct ni le serveur relais n'ont répondu.");
-                alert("Échec de l'envoi. Assure-toi que le loader est actif sur la PS5 ou que node server.js est démarré.");
-            }
-        }
+    // Navigation simple entre les onglets
+    function switchTab(tabId, btn) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        btn.classList.add('active');
     }
 </script>
-
 </body>
 </html>
