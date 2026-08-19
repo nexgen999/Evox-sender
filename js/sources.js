@@ -111,10 +111,16 @@ function renderElfList() {
     const elfSelect = document.getElementById('elf-select');
     elfSelect.innerHTML = '';
 
+    // Associer chaque élément à son index d'origine dans globalElfItems
+    let itemsWithOriginalIndex = globalElfItems.map((item, originalIndex) => ({
+        ...item,
+        originalIndex
+    }));
+
     // Filtrage
     let filtered = selectedCat === 'all' 
-        ? [...globalElfItems] 
-        : globalElfItems.filter(item => item.category === selectedCat);
+        ? itemsWithOriginalIndex 
+        : itemsWithOriginalIndex.filter(item => item.category === selectedCat);
 
     // Tri alphabétique par nom
     filtered.sort((a, b) => {
@@ -125,7 +131,7 @@ function renderElfList() {
 
     filtered.forEach((item) => {
         const opt = document.createElement('option');
-        opt.value = globalElfItems.indexOf(item);
+        opt.value = item.originalIndex; // Garde le véritable index
         opt.textContent = item.name + (item.version ? ` (${item.version})` : '');
         elfSelect.appendChild(opt);
     });
@@ -179,12 +185,15 @@ function renderPkgList() {
     const pkgSelect = document.getElementById('pkg-select');
     pkgSelect.innerHTML = '';
 
-    // Filtrage
-    let filtered = selectedCat === 'all' 
-        ? [...globalPkgItems] 
-        : globalPkgItems.filter(item => item.category === selectedCat);
+    let itemsWithOriginalIndex = globalPkgItems.map((item, originalIndex) => ({
+        ...item,
+        originalIndex
+    }));
 
-    // Tri alphabétique par nom
+    let filtered = selectedCat === 'all' 
+        ? itemsWithOriginalIndex 
+        : itemsWithOriginalIndex.filter(item => item.category === selectedCat);
+
     filtered.sort((a, b) => {
         const nameA = a.name || a.display_name || '';
         const nameB = b.name || b.display_name || '';
@@ -193,7 +202,7 @@ function renderPkgList() {
 
     filtered.forEach((item) => {
         const opt = document.createElement('option');
-        opt.value = globalPkgItems.indexOf(item);
+        opt.value = item.originalIndex;
         opt.textContent = item.name || item.display_name || "Package";
         pkgSelect.appendChild(opt);
     });
