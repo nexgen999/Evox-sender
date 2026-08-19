@@ -1,0 +1,30 @@
+{
+  "name": "evox-sender-lite",
+  "version": "1.0.0",
+  "description": "Evox Sender Lite Desktop",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "author": "nexgen999",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.nexgen999.evoxsenderlite",
+    "productName": "Evox Sender Lite",
+    "files": [
+      "**/*"
+    ],
+    "win": {
+      "target": "portable",
+      "icon": "logo.png"
+    }
+  }
+}
