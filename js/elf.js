@@ -24,7 +24,6 @@
             return;
         }
 
-        // Récupération de l'objet dans le tableau globalElfItems
         const selectedItem = globalElfItems[selectedIndex];
         const elfUrl = selectedItem.url || selectedItem.direct_link || selectedItem.link;
 
@@ -33,68 +32,52 @@
             return;
         }
 
-        // Récupération IP et Port
         const ipInput = document.getElementById('ps5-ip');
         const portInput = document.getElementById('elf-port-default');
         
         let ps5Ip = ipInput ? ipInput.value.trim() : '';
         const ps5Port = portInput ? portInput.value.trim() : '9021';
 
-        // Si l'IP est vide ou sur localhost depuis la PS5, on pointe vers 127.0.0.1
         if (!ps5Ip || ps5Ip === 'localhost') {
             ps5Ip = '127.0.0.1';
         }
 
-        log(`[ELF] Telechargement depuis : ${elfUrl}`);
+        log(`[ELF] Téléchargement du binaire : ${elfUrl}`);
 
         try {
-            // 1. Telechargement du binaire .elf
+            // 1. Récupération du fichier .elf
             const fetchRes = await fetch(elfUrl);
-            if (!fetchRes.ok) throw new Error(`HTTP ${fetchRes.status} : Impossible de télécharger le fichier ELF.`);
+            if (!fetchRes.ok) throw new Error(`HTTP ${fetchRes.status} : Téléchargement du binaire impossible.`);
             const arrayBuffer = await fetchRes.arrayBuffer();
             log(`[ELF] Binaire chargé (${arrayBuffer.byteLength} octets).`);
 
-            // 2. Tentative #1 : WebSocket Direct (navigateur PS5)
+            // 2. Tentative #1 : Direct Fetch TCP (Navigateur PS5)
             let directSuccess = false;
             try {
-                log(`[ELF WS] Connexion vers ws://${ps5Ip}:${ps5Port}...`);
+                log(`[ELF DIRECT] Envoi brut vers http://${ps5Ip}:${ps5Port}...`);
+                
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 4000);
 
-                await new Promise((resolve, reject) => {
-                    const ws = new WebSocket(`ws://${ps5Ip}:${ps5Port}`);
-                    ws.binaryType = 'arraybuffer';
-
-                    const timer = setTimeout(() => {
-                        ws.close();
-                        reject(new Error("Timeout WebSocket (4s)"));
-                    }, 4000);
-
-                    ws.onopen = () => {
-                        clearTimeout(timer);
-                        log('[ELF WS] Connecté au loader ! Injection en cours...');
-                        ws.send(arrayBuffer);
-                        setTimeout(() => {
-                            ws.close();
-                            resolve();
-                        }, 500);
-                    };
-
-                    ws.onerror = (err) => {
-                        clearTimeout(timer);
-                        reject(err);
-                    };
+                await fetch(`http://${ps5Ip}:${ps5Port}`, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: arrayBuffer,
+                    signal: controller.signal
                 });
 
+                clearTimeout(timeoutId);
                 directSuccess = true;
-                log('[ELF SUCCÈS] Payload injecté avec succès via WebSocket direct !');
+                log('[ELF SUCCÈS] Payload transmis directement au loader PS5 !');
 
-            } catch (wsErr) {
-                log(`[ELF WS] Échec WebSocket direct. Tentative via le serveur relais local...`);
+            } catch (directErr) {
+                log(`[ELF DIRECT] Échec de l'envoi direct (${directErr.message}). Bascule sur server.js...`);
             }
 
-            // 3. Tentative #2 : Relais Node.js (depuis PC)
+            // 3. Tentative #2 : Serveur relais local (PC)
             if (!directSuccess) {
                 const relayUrl = `http://localhost:3000/send-elf?ip=${ps5Ip}&port=${ps5Port}`;
-                log(`[ELF RELAIS] Envoi de la requête à ${relayUrl}...`);
+                log(`[ELF RELAIS] Envoi au serveur local ${relayUrl}...`);
                 
                 const relayRes = await fetch(relayUrl, {
                     method: 'POST',
@@ -115,7 +98,6 @@
         }
     }
 
-    // Attachement de l'événement
     function attachEvent() {
         const btnSendElf = document.getElementById('btn-send-elf');
         if (btnSendElf) {
