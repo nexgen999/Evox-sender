@@ -1,5 +1,5 @@
 /**
- * Module ELF : Reçoit la sélection et transmet le fichier .elf / .bin via XHR/Blob à la PS5.
+ * Module ELF : Envoi réseau avec gestion des restrictions HTTPS/CORS
  */
 async function sendElfPayload() {
     const ip = document.getElementById('ps5-ip').value.trim();
@@ -7,7 +7,7 @@ async function sendElfPayload() {
     const idx = document.getElementById('elf-select').value;
 
     if (!ip) {
-        log("Veuillez renseigner l'adresse IP dans l'onglet Configuration.", "error");
+        log("Veuillez renseigner l'IP de la PS5 dans Configuration.", "error");
         return;
     }
     if (idx === "") {
@@ -21,31 +21,41 @@ async function sendElfPayload() {
         return;
     }
 
-    log(`[1/2] Téléchargement du fichier : ${payload.name}...`, "info");
+    log(`[1/2] Téléchargement du payload : ${payload.name}...`, "info");
 
     try {
+        // Téléchargement du binaire ELF/BIN
         const res = await fetch(payload.url);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const buffer = await res.arrayBuffer();
+        if (!res.ok) throw new Error(`Impossible de télécharger le fichier (${res.status})`);
+        const arrayBuffer = await res.arrayBuffer();
 
-        log(`[2/2] Envoi vers ${ip}:${port}...`, "warning");
+        log(`[2/2] Envoi du binaire vers ${ip}:${port}...`, "warning");
 
-        // Utilisation de XMLHttpRequest + Blob (Injections fluides sous WebKit PS5)
+        // Utilisation d'un Blob binaire brut pour le port elfldr
+        const blob = new Blob([arrayBuffer], { type: 'application/octet-stream' });
+        
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', `http://${ip}:${port}/`, true);
+        xhr.open('POST', `http://${ip}:${port}`, true);
+
+        // Timeout de 10 secondes si la console ne répond pas
+        xhr.timeout = 10000;
 
         xhr.onload = function() {
-            log(`Payload "${payload.name}" injecté avec succès !`, "success");
+            log(`Payload "${payload.name}" envoyé avec succès !`, "success");
         };
 
         xhr.onerror = function() {
-            log(`Impossible de se connecter à ${ip}:${port}. Vérifiez que le serveur TCP/elfldr écoute.`, "error");
+            log(`Échec d'envoi vers ${ip}:${port}. Si vous êtes sur PC via GitHub Pages (HTTPS), le navigateur bloque les flux HTTP locaux.`, "error");
         };
 
-        xhr.send(new Blob([buffer]));
+        xhr.ontimeout = function() {
+            log(`Délai dépassé (Timeout) lors de la connexion à ${ip}:${port}.`, "error");
+        };
+
+        xhr.send(blob);
 
     } catch (e) {
-        log(`Erreur lors de l'envoi de l'ELF : ${e.message}`, "error");
+        log(`Erreur : ${e.message}`, "error");
     }
 }
 
