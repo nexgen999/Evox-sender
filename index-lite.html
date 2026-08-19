@@ -244,6 +244,16 @@
             gap: 4px;
         }
 
+        /* Footer */
+        .footer {
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-color);
+        }
+
         /* Responsive Mobile */
         @media (max-width: 850px) {
             .main-grid {
@@ -291,7 +301,7 @@
             </div>
         </div>
 
-        <!-- COLONNE DROITE : MENU ENVOYER PAYLOAD -->
+        <!-- COLONNE DROITE : MENU ENVOYER PAYLOAD + AJOUT DE SOURCE -->
         <div class="right-column">
             <div class="card">
                 <div class="card-title">Envoyer un Payload (ELF)</div>
@@ -299,6 +309,15 @@
                 <div class="form-group">
                     <label for="elf-source-select">Source des Payloads</label>
                     <select id="elf-source-select"><option value="">Chargement des sources...</option></select>
+                </div>
+
+                <!-- Saisie personnalisée d'une URL de source JSON -->
+                <div class="form-group">
+                    <label for="custom-json-url">Ajouter une source personnalisée (.json)</label>
+                    <div class="input-with-btn">
+                        <input type="text" id="custom-json-url" placeholder="https://domaine.com/payloads.json">
+                        <button id="btn-add-custom-source" class="btn-secondary">Charger</button>
+                    </div>
                 </div>
 
                 <div class="form-row">
@@ -323,18 +342,22 @@
             </div>
         </div>
     </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        Evox Sender Lite v0.1 build by nexgen999
+    </footer>
 </div>
 
-<!-- Chargement des scripts JS originaux -->
+<!-- Scripts JS -->
 <script src="js/logger.js"></script>
 <script src="js/config.js"></script>
 <script src="js/sources.js"></script>
 <script src="js/elf.js"></script>
 
-<!-- Script pour simuler la présence de la vue PKG attendue par sources.js sans créer d'erreur -->
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // Correctif si sources.js cherche à remplir la partie PKG
+        // Elements masqués pour assurer la compatibilité JS sans la section PKG
         if (!document.getElementById('pkg-source-select')) {
             const dummyPkgSource = document.createElement('select');
             dummyPkgSource.id = 'pkg-source-select';
@@ -352,6 +375,33 @@
             dummyPkg.id = 'pkg-select';
             dummyPkg.style.display = 'none';
             document.body.appendChild(dummyPkg);
+        }
+
+        // Événement pour charger une source JSON personnalisée
+        const btnAddSource = document.getElementById('btn-add-custom-source');
+        if (btnAddSource) {
+            btnAddSource.addEventListener('click', () => {
+                const urlInput = document.getElementById('custom-json-url');
+                const url = urlInput ? urlInput.value.trim() : '';
+
+                if (!url) {
+                    if (typeof logStatus === 'function') logStatus("[SOURCE] Veuillez entrer une URL valide de fichier .json");
+                    return;
+                }
+
+                const selectSources = document.getElementById('elf-source-select');
+                if (selectSources) {
+                    const opt = document.createElement('option');
+                    opt.value = url;
+                    opt.textContent = "Custom: " + url.split('/').pop();
+                    opt.selected = true;
+                    selectSources.appendChild(opt);
+                }
+
+                if (typeof fetchElfData === 'function') {
+                    fetchElfData(url);
+                }
+            });
         }
     });
 </script>
