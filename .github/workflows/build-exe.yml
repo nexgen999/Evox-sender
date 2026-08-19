@@ -1,0 +1,36 @@
+name: Build Windows EXE
+
+on:
+  push:
+    tags:
+      - 'v*' # Se déclenche quand tu publies un tag (ex: v1.0.0)
+  workflow_dispatch: # Permet de lancer le build manuellement depuis l'onglet Actions
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Récupération du code
+        uses: actions/checkout@v4
+
+      - name: Configuration de Node.js
+        uses: actions/checkout@v4
+        with:
+          node-version: 20
+
+      - name: Installation des dépendances
+        run: npm ci
+
+      - name: Compilation de l'EXE avec Electron Builder
+        run: npm run build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publication de la Release GitHub
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: dist/*.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
