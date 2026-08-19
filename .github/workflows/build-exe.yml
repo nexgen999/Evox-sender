@@ -1,4 +1,16 @@
-steps:
+name: Build Windows EXE
+
+on:
+  workflow_dispatch: # <-- Active le bouton "Run workflow" manuel
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
       - name: Récupération du code
         uses: actions/checkout@v4
 
