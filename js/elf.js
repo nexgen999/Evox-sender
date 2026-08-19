@@ -16,29 +16,20 @@
         log("[ELF] Bouton 'Injecter l'ELF' cliqué.");
 
         const elfSelect = document.getElementById('elf-select');
-        if (!elfSelect || !elfSelect.value) {
-            log("[ELF ERREUR] Veuillez sélectionner un payload ELF dans la liste.");
+        const selectedIndex = elfSelect ? elfSelect.value : null;
+
+        if (selectedIndex === null || selectedIndex === "" || typeof globalElfItems === 'undefined' || !globalElfItems[selectedIndex]) {
+            log("[ELF ERREUR] Veuillez sélectionner un payload ELF valide dans la liste.");
             alert("Veuillez sélectionner un payload ELF.");
             return;
         }
 
-        let elfUrl = elfSelect.value;
+        // Récupération de l'objet dans le tableau globalElfItems
+        const selectedItem = globalElfItems[selectedIndex];
+        const elfUrl = selectedItem.url || selectedItem.direct_link || selectedItem.link;
 
-        // Si la valeur est un ID/Index (ex: "22") ou un attribut data-url
-        const selectedOption = elfSelect.options[elfSelect.selectedIndex];
-        if (selectedOption && selectedOption.dataset && selectedOption.dataset.url) {
-            elfUrl = selectedOption.dataset.url;
-        } else if (typeof window.elfSourcesData !== 'undefined') {
-            // Recherche dans le tableau global des sources si présent
-            const foundItem = window.elfSourcesData.find(item => String(item.id) === String(elfUrl));
-            if (foundItem && foundItem.url) {
-                elfUrl = foundItem.url;
-            }
-        }
-
-        // Vérification si elfUrl est bien une URL valide
-        if (!elfUrl.startsWith('http://') && !elfUrl.startsWith('https://') && !elfUrl.startsWith('./') && !elfUrl.startsWith('/')) {
-            log(`[ELF ERREUR] L'élément sélectionné ("${elfUrl}") n'est pas une URL de fichier valide.`);
+        if (!elfUrl) {
+            log("[ELF ERREUR] Aucune URL valide trouvée pour cet élément.");
             return;
         }
 
@@ -49,16 +40,17 @@
         let ps5Ip = ipInput ? ipInput.value.trim() : '';
         const ps5Port = portInput ? portInput.value.trim() : '9021';
 
+        // Si l'IP est vide ou sur localhost depuis la PS5, on pointe vers 127.0.0.1
         if (!ps5Ip || ps5Ip === 'localhost') {
             ps5Ip = '127.0.0.1';
         }
 
-        log(`[ELF] Chargement du fichier depuis : ${elfUrl}`);
+        log(`[ELF] Telechargement depuis : ${elfUrl}`);
 
         try {
-            // 1. Récupération du fichier binaire .elf
+            // 1. Telechargement du binaire .elf
             const fetchRes = await fetch(elfUrl);
-            if (!fetchRes.ok) throw new Error(`HTTP ${fetchRes.status} : Impossible de télécharger l'ELF.`);
+            if (!fetchRes.ok) throw new Error(`HTTP ${fetchRes.status} : Impossible de télécharger le fichier ELF.`);
             const arrayBuffer = await fetchRes.arrayBuffer();
             log(`[ELF] Binaire chargé (${arrayBuffer.byteLength} octets).`);
 
@@ -96,7 +88,7 @@
                 log('[ELF SUCCÈS] Payload injecté avec succès via WebSocket direct !');
 
             } catch (wsErr) {
-                log(`[ELF WS] Échec WebSocket direct. Bascule sur le relais local (server.js)...`);
+                log(`[ELF WS] Échec WebSocket direct. Tentative via le serveur relais local...`);
             }
 
             // 3. Tentative #2 : Relais Node.js (depuis PC)
