@@ -37,11 +37,43 @@ async function initSources() {
             fetchPkgData(sources.pkg_sources[0].url);
         }
 
-        log("Sources chargées avec succès.", "success");
+        log("Sources initiales chargées.", "success");
 
     } catch (e) {
         log(`Erreur chargement sources.json : ${e.message}`, "error");
     }
+}
+
+// Helper : Extrait un tableau plat d'éléments peu importe le format JSON reçu
+function parseFlexibleJsonData(data) {
+    if (Array.isArray(data)) {
+        return data;
+    } 
+    
+    if (typeof data === 'object' && data !== null) {
+        // Cas 1 : La liste est encapsulée dans une clé sous-jacente (ex: {"aio store": [...]})
+        const keys = Object.keys(data);
+        for (const key of keys) {
+            if (Array.isArray(data[key])) {
+                return data[key];
+            }
+        }
+
+        // Cas 2 : L'objet a des clés servant directement de catégories (ex: {"Kernel": [...], "Tools": [...]})
+        let aggregated = [];
+        for (const catName of keys) {
+            if (Array.isArray(data[catName])) {
+                const itemsWithCat = data[catName].map(item => ({
+                    ...item,
+                    category: item.category || catName
+                }));
+                aggregated = aggregated.concat(itemsWithCat);
+            }
+        }
+        if (aggregated.length > 0) return aggregated;
+    }
+
+    return [];
 }
 
 // --- GESTION ELF ---
@@ -49,12 +81,16 @@ async function fetchElfData(url) {
     log(`Chargement des ELF : ${url}`);
     try {
         const res = await fetch(url);
-        const data = await res.json();
-        globalElfItems = Array.isArray(data) ? data : [];
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const rawData = await res.json();
+        
+        // Extraction flexible pour géreritsPLK et nexgen999
+        globalElfItems = parseFlexibleJsonData(rawData);
 
-        // Remplir les catégories
+        // Remplir le menu des catégories
         const catSelect = document.getElementById('elf-category-select');
         catSelect.innerHTML = '<option value="all">-- Toutes les catégories --</option>';
+        
         const categories = [...new Set(globalElfItems.map(item => item.category).filter(Boolean))];
         categories.forEach(cat => {
             const opt = document.createElement('option');
@@ -104,12 +140,15 @@ async function fetchPkgData(url) {
     log(`Chargement des PKG : ${url}`);
     try {
         const res = await fetch(url);
-        const data = await res.json();
-        globalPkgItems = Array.isArray(data) ? data : (data.packages || []);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const rawData = await res.json();
+        
+        globalPkgItems = parseFlexibleJsonData(rawData);
 
-        // Remplir les catégories
+        // Remplir le menu des catégories
         const catSelect = document.getElementById('pkg-category-select');
         catSelect.innerHTML = '<option value="all">-- Toutes les catégories --</option>';
+        
         const categories = [...new Set(globalPkgItems.map(item => item.category).filter(Boolean))];
         categories.forEach(cat => {
             const opt = document.createElement('option');
@@ -154,7 +193,7 @@ function updatePkgDesc() {
     }
 }
 
-// Événements
+// Événements DOM
 document.addEventListener('DOMContentLoaded', () => {
     initSources();
 
