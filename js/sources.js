@@ -1,5 +1,6 @@
 /**
  * Module Sources : Gère le téléchargement des JSON, l'isolation des catégories et l'affichage des descriptions.
+ * Inclus le tri alphabétique automatique des catégories et des éléments.
  */
 let globalElfItems = [];
 let globalPkgItems = [];
@@ -51,7 +52,6 @@ function parseFlexibleJsonData(data) {
     } 
     
     if (typeof data === 'object' && data !== null) {
-        // Cas 1 : La liste est encapsulée dans une clé sous-jacente (ex: {"aio store": [...]})
         const keys = Object.keys(data);
         for (const key of keys) {
             if (Array.isArray(data[key])) {
@@ -59,7 +59,6 @@ function parseFlexibleJsonData(data) {
             }
         }
 
-        // Cas 2 : L'objet a des clés servant directement de catégories (ex: {"Kernel": [...], "Tools": [...]})
         let aggregated = [];
         for (const catName of keys) {
             if (Array.isArray(data[catName])) {
@@ -84,14 +83,15 @@ async function fetchElfData(url) {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const rawData = await res.json();
         
-        // Extraction flexible pour géreritsPLK et nexgen999
         globalElfItems = parseFlexibleJsonData(rawData);
 
-        // Remplir le menu des catégories
+        // Remplir le menu des catégories + Tri alphabétique
         const catSelect = document.getElementById('elf-category-select');
         catSelect.innerHTML = '<option value="all">-- Toutes les catégories --</option>';
         
         const categories = [...new Set(globalElfItems.map(item => item.category).filter(Boolean))];
+        categories.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+
         categories.forEach(cat => {
             const opt = document.createElement('option');
             opt.value = cat;
@@ -111,9 +111,17 @@ function renderElfList() {
     const elfSelect = document.getElementById('elf-select');
     elfSelect.innerHTML = '';
 
-    const filtered = selectedCat === 'all' 
-        ? globalElfItems 
+    // Filtrage
+    let filtered = selectedCat === 'all' 
+        ? [...globalElfItems] 
         : globalElfItems.filter(item => item.category === selectedCat);
+
+    // Tri alphabétique par nom
+    filtered.sort((a, b) => {
+        const nameA = a.name || '';
+        const nameB = b.name || '';
+        return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
+    });
 
     filtered.forEach((item) => {
         const opt = document.createElement('option');
@@ -145,11 +153,13 @@ async function fetchPkgData(url) {
         
         globalPkgItems = parseFlexibleJsonData(rawData);
 
-        // Remplir le menu des catégories
+        // Remplir le menu des catégories + Tri alphabétique
         const catSelect = document.getElementById('pkg-category-select');
         catSelect.innerHTML = '<option value="all">-- Toutes les catégories --</option>';
         
         const categories = [...new Set(globalPkgItems.map(item => item.category).filter(Boolean))];
+        categories.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+
         categories.forEach(cat => {
             const opt = document.createElement('option');
             opt.value = cat;
@@ -169,9 +179,17 @@ function renderPkgList() {
     const pkgSelect = document.getElementById('pkg-select');
     pkgSelect.innerHTML = '';
 
-    const filtered = selectedCat === 'all' 
-        ? globalPkgItems 
+    // Filtrage
+    let filtered = selectedCat === 'all' 
+        ? [...globalPkgItems] 
         : globalPkgItems.filter(item => item.category === selectedCat);
+
+    // Tri alphabétique par nom
+    filtered.sort((a, b) => {
+        const nameA = a.name || a.display_name || '';
+        const nameB = b.name || b.display_name || '';
+        return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
+    });
 
     filtered.forEach((item) => {
         const opt = document.createElement('option');
