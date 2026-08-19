@@ -1,58 +1,70 @@
 /**
- * Module PKG : Transmet la demande d'installation au serveur Direct PKG Installer (port 12800).
+ * Module PKG : Transmet la demande d'installation au serveur relais Node.js local
  */
+
 async function sendPkgInstall() {
-    const ip = document.getElementById('ps5-ip').value.trim();
-    const port = document.getElementById('pkg-port-default').value.trim() || '12800';
-    const idx = document.getElementById('pkg-select').value;
+    const ipInput = document.getElementById('ps5-ip');
+    const portInput = document.getElementById('pkg-port-default');
+    const pkgSelect = document.getElementById('pkg-select');
+
+    if (!ipInput || !pkgSelect) {
+        log("Erreur : Les éléments du formulaire PKG sont introuvables.", "error");
+        return;
+    }
+
+    const ip = ipInput.value.trim();
+    const port = portInput ? portInput.value.trim() || '12800' : '12800';
+    const idx = pkgSelect.value;
 
     if (!ip) {
-        log("Veuillez renseigner l'adresse IP dans l'onglet Configuration.", "error");
-        return;
-    }
-    if (idx === "") {
-        log("Veuillez sélectionner un package PKG.", "error");
+        log("Veuillez renseigner l'adresse IP de la PS5 dans la Configuration.", "error");
         return;
     }
 
-    const pkg = globalPkgItems[idx];
+    if (idx === "" || idx === null || idx === undefined) {
+        log("Veuillez sélectionner un package PKG dans la liste.", "error");
+        return;
+    }
+
+    const pkg = (typeof globalPkgItems !== 'undefined') ? globalPkgItems[idx] : null;
+
     if (!pkg || !pkg.url) {
-        log("URL du PKG invalide.", "error");
+        log("Erreur : Package introuvable ou URL manquante.", "error");
         return;
     }
 
-    log(`Envoi de l'ordre d'installation pour : ${pkg.name || 'Package'}...`, "info");
+    const pkgName = pkg.name || pkg.display_name || "Package";
 
     try {
-        const endpoint = `http://${ip}:${port}/api/install`;
-        const payloadData = JSON.stringify({
-            type: 'direct',
-            packages: [pkg.url]
+        log(`Envoi de l'ordre d'installation pour "${pkgName}"...`, "info");
+
+        // Transmission au relais Node.js
+        const sendRes = await fetch(`http://localhost:3000/send-pkg?ip=${encodeURIComponent(ip)}&port=${encodeURIComponent(port)}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ url: pkg.url })
         });
 
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', endpoint, true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
+        const statusText = await sendRes.text();
 
-        xhr.onload = function() {
-            if (xhr.status >= 200 && xhr.status < 300) {
-                log(`Commande transmise à Direct PKG Installer avec succès !`, "success");
-            } else {
-                log(`Réponse PS5 (Code HTTP ${xhr.status})`, "warning");
-            }
-        };
-
-        xhr.onerror = function() {
-            log(`Échec de connexion à Direct PKG Installer sur ${ip}:${port}.`, "error");
-        };
-
-        xhr.send(payloadData);
+        if (sendRes.ok) {
+            log(`Succès : ${statusText}`, "success");
+        } else {
+            log(`Échec : ${statusText}`, "error");
+        }
 
     } catch (e) {
-        log(`Erreur lors de l'envoi du PKG : ${e.message}`, "error");
+        log(`Erreur lors de l'envoi du PKG : ${e.message}. Assurez-vous que 'node server.js' tourne bien.`, "error");
     }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('btn-send-pkg').addEventListener('click', sendPkgInstall);
+    const btnSendPkg = document.getElementById('btn-send-pkg');
+    if (btnSendPkg) {
+        btnSendPkg.addEventListener('click', sendPkgInstall);
+    } else {
+        console.error("Bouton #btn-send-pkg introuvable dans le HTML.");
+    }
 });

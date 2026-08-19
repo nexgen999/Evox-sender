@@ -1,64 +1,82 @@
 /**
- * Module ELF : Envoi réseau avec gestion des restrictions HTTPS/CORS
+ * Module ELF : Envoi de payloads (.elf / .bin) via le serveur relais Node.js local (port 3000)
  */
+
 async function sendElfPayload() {
-    const ip = document.getElementById('ps5-ip').value.trim();
-    const port = document.getElementById('elf-port-default').value.trim() || '9021';
-    const idx = document.getElementById('elf-select').value;
+    const ipInput = document.getElementById('ps5-ip');
+    const portInput = document.getElementById('elf-port-default');
+    const elfSelect = document.getElementById('elf-select');
 
+    // Vérification de la présence des éléments HTML
+    if (!ipInput || !elfSelect) {
+        log("Erreur : Les éléments du formulaire sont introuvables dans la page.", "error");
+        return;
+    }
+
+    const ip = ipInput.value.trim();
+    const port = portInput ? portInput.value.trim() || '9021' : '9021';
+    const idx = elfSelect.value;
+
+    // Contrôles de saisie
     if (!ip) {
-        log("Veuillez renseigner l'IP de la PS5 dans Configuration.", "error");
-        return;
-    }
-    if (idx === "") {
-        log("Veuillez sélectionner un payload ELF.", "error");
+        log("Veuillez renseigner l'adresse IP de la PS5 dans l'onglet Configuration.", "error");
         return;
     }
 
-    const payload = globalElfItems[idx];
+    if (idx === "" || idx === null || idx === undefined) {
+        log("Veuillez sélectionner un payload ELF dans la liste.", "error");
+        return;
+    }
+
+    // Récupération du payload sélectionné dans le tableau global
+    const payload = (typeof globalElfItems !== 'undefined') ? globalElfItems[idx] : null;
+
     if (!payload || !payload.url) {
-        log("URL du payload invalide.", "error");
+        log("Erreur : Payload introuvable ou URL manquante.", "error");
         return;
     }
-
-    log(`[1/2] Téléchargement du payload : ${payload.name}...`, "info");
 
     try {
-        // Téléchargement du binaire ELF/BIN
-        const res = await fetch(payload.url);
-        if (!res.ok) throw new Error(`Impossible de télécharger le fichier (${res.status})`);
-        const arrayBuffer = await res.arrayBuffer();
-
-        log(`[2/2] Envoi du binaire vers ${ip}:${port}...`, "warning");
-
-        // Utilisation d'un Blob binaire brut pour le port elfldr
-        const blob = new Blob([arrayBuffer], { type: 'application/octet-stream' });
+        log(`[1/2] Téléchargement du fichier : ${payload.name}...`, "info");
         
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', `http://${ip}:${port}`, true);
+        // 1. Récupération du fichier binaire distant (.elf / .bin)
+        const res = await fetch(payload.url);
+        if (!res.ok) {
+            throw new Error(`Échec du téléchargement du payload (Code HTTP ${res.status})`);
+        }
+        const elfData = await res.arrayBuffer();
 
-        // Timeout de 10 secondes si la console ne répond pas
-        xhr.timeout = 10000;
+        log(`[2/2] Transmission à la PS5 (${ip}:${port}) via le relais local...`, "warning");
 
-        xhr.onload = function() {
-            log(`Payload "${payload.name}" envoyé avec succès !`, "success");
-        };
+        // 2. Envoi du flux binaire au serveur relais local (server.js)
+        const sendRes = await fetch(`http://localhost:3000/send-elf?ip=${encodeURIComponent(ip)}&port=${encodeURIComponent(port)}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/octet-stream'
+            },
+            body: elfData
+        });
 
-        xhr.onerror = function() {
-            log(`Échec d'envoi vers ${ip}:${port}. Si vous êtes sur PC via GitHub Pages (HTTPS), le navigateur bloque les flux HTTP locaux.`, "error");
-        };
+        const statusText = await sendRes.text();
 
-        xhr.ontimeout = function() {
-            log(`Délai dépassé (Timeout) lors de la connexion à ${ip}:${port}.`, "error");
-        };
-
-        xhr.send(blob);
+        // 3. Traitement du retour du serveur relais
+        if (sendRes.ok) {
+            log(`Succès : ${statusText}`, "success");
+        } else {
+            log(`Échec du relais : ${statusText}`, "error");
+        }
 
     } catch (e) {
-        log(`Erreur : ${e.message}`, "error");
+        log(`Erreur lors de l'envoi : ${e.message}. Assurez-vous que 'node server.js' tourne bien sur votre PC.`, "error");
     }
 }
 
+// Attachement de l'événement au bouton lors du chargement complet du DOM
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('btn-send-elf').addEventListener('click', sendElfPayload);
+    const btnSend = document.getElementById('btn-send-elf');
+    if (btnSend) {
+        btnSend.addEventListener('click', sendElfPayload);
+    } else {
+        console.error("Bouton #btn-send-elf introuvable dans le document HTML.");
+    }
 });
