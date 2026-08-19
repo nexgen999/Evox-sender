@@ -1,211 +1,128 @@
-// elf.js
-let currentFilteredPayloads = [];
+let allElfPayloads = [];
 
-// Fonction utilitaire de log (si non définie dans la page HTML)
-function writeLog(msg, type = 'info') {
-    if (typeof log === 'function') {
-        log(msg, type);
-    } else {
-        const consoleEl = document.getElementById('status-console') || document.getElementById('log');
-        if (consoleEl) {
-            const time = new Date().toLocaleTimeString();
-            consoleEl.innerHTML += `<div class="log-${type}">[${time}] ${msg}</div>`;
-            consoleEl.scrollTop = consoleEl.scrollHeight;
-        }
-    }
-}
-
-// 1. Chargement des sources depuis sources.json
-async function loadElfSources() {
-    const sourceSelect = document.getElementById('elf-source-select');
-    if (!sourceSelect) return;
-
+async function initElfModule() {
+    log("Chargement de sources.json...");
     try {
         const res = await fetch('sources.json');
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
+        const sources = await res.json();
+        
+        const sourceSelect = document.getElementById('elf-source-select');
+        sourceSelect.innerHTML = '';
 
-        sourceSelect.innerHTML = '<option value="">-- Sélectionnez une source --</option>';
-        if (data.elf_sources && Array.isArray(data.elf_sources)) {
-            data.elf_sources.forEach((src, idx) => {
+        if (sources.elf_sources && sources.elf_sources.length > 0) {
+            sources.elf_sources.forEach(src => {
                 const opt = document.createElement('option');
                 opt.value = src.url;
-                opt.textContent = src.name || `Source ${idx + 1}`;
+                opt.textContent = src.name;
                 sourceSelect.appendChild(opt);
             });
+            log("Sources chargées.", "success");
+            loadElfPayloads(sources.elf_sources[0].url);
         }
-        
-        const customOpt = document.createElement('option');
-        customOpt.value = 'custom';
-        customOpt.textContent = '-- Ajouter une URL personnalisée --';
-        sourceSelect.appendChild(customOpt);
-
-    } catch (err) {
-        writeLog(`Erreur chargement sources ELF : ${err.message}`, 'error');
+    } catch (e) {
+        log(`Erreur chargement sources.json: ${e.message}`, "error");
     }
 }
 
-// 2. Chargement et parsing des payloads (gestion des catégories)
 async function loadElfPayloads(url) {
-    const payloadSelect = document.getElementById('elf-select');
-    if (!payloadSelect) return;
-
-    payloadSelect.innerHTML = '<option value="">Chargement des payloads...</option>';
-    currentFilteredPayloads = [];
-
+    log(`Chargement des ELF depuis : ${url}`);
     try {
         const res = await fetch(url);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-
-        // Réinitialisation de la liste
-        payloadSelect.innerHTML = '<option value="">-- Sélectionnez un payload --</option>';
-
-        // Cas 1 : Tableau simple [{name, url, category}, ...]
-        if (Array.isArray(data)) {
-            currentFilteredPayloads = data;
-            
-            // Regroupement par catégories
-            const categories = {};
-            data.forEach((item, index) => {
-                const cat = item.category || 'Autres';
-                if (!categories[cat]) categories[cat] = [];
-                categories[cat].push({ ...item, _index: index });
-            });
-
-            Object.keys(categories).forEach(catName => {
-                const group = document.createElement('optgroup');
-                group.label = catName;
-                categories[catName].forEach(item => {
-                    const opt = document.createElement('option');
-                    opt.value = item._index;
-                    opt.textContent = item.name + (item.version ? ` (v${item.version})` : '');
-                    group.appendChild(opt);
-                });
-                payloadSelect.appendChild(group);
-            });
-
-        } 
-        // Cas 2 : Objet avec clés de catégories {"Kernel": [...], "Réseau": [...]}
-        else if (typeof data === 'object') {
-            let globalIndex = 0;
-            Object.keys(data).forEach(catName => {
-                if (Array.isArray(data[catName])) {
-                    const group = document.createElement('optgroup');
-                    group.label = catName;
-                    
-                    data[catName].forEach(item => {
-                        const indexedItem = { ...item, category: item.category || catName, _index: globalIndex };
-                        currentFilteredPayloads.push(indexedItem);
-                        
-                        const opt = document.createElement('option');
-                        opt.value = globalIndex;
-                        opt.textContent = item.name + (item.version ? ` (v${item.version})` : '');
-                        group.appendChild(opt);
-                        
-                        globalIndex++;
-                    });
-                    payloadSelect.appendChild(group);
-                }
-            });
-        }
-
-        writeLog(`${currentFilteredPayloads.length} payload(s) ELF chargé(s).`, 'success');
-
-    } catch (err) {
-        payloadSelect.innerHTML = '<option value="">Erreur de chargement</option>';
-        writeLog(`Impossible de lire la liste des payloads : ${err.message}`, 'error');
+        allElfPayloads = Array.isArray(data) ? data : [];
+        
+        populateCategories();
+        filterAndRenderElf();
+        log(`Liste ELF chargée (${allElfPayloads.length} payload(s)).`, "success");
+    } catch (e) {
+        log(`Erreur chargement payloads: ${e.message}`, "error");
     }
 }
 
-// 3. Affichage des détails au survol/sélection
-function updateElfDetails() {
-    const payloadSelect = document.getElementById('elf-select');
-    const detailsContainer = document.getElementById('elf-details') || document.getElementById('payload-desc');
-    if (!payloadSelect || !detailsContainer) return;
-
-    const idx = payloadSelect.value;
-    if (idx === "" || !currentFilteredPayloads[idx]) {
-        detailsContainer.textContent = "Sélectionnez un payload pour voir sa description.";
-        return;
-    }
-
-    const payload = currentFilteredPayloads[idx];
-    const desc = payload.description || "Aucune description disponible.";
-    const version = payload.version ? ` | Version: ${payload.version}` : '';
-    const category = payload.category ? ` | Catégorie: ${payload.category}` : '';
+function populateCategories() {
+    const catSelect = document.getElementById('elf-category-select');
+    catSelect.innerHTML = '<option value="all">-- Toutes les catégories --</option>';
     
-    detailsContainer.innerHTML = `<strong>${payload.name}</strong>${version}${category}<br>${desc}`;
+    const categories = new Set();
+    allElfPayloads.forEach(p => { if (p.category) categories.add(p.category); });
+    
+    categories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        catSelect.appendChild(opt);
+    });
 }
 
-// 4. Envoi du fichier ELF (Netcat / XHR Stream pour PS5)
-async function sendElf() {
-    const ipInput = document.getElementById('ps5-ip');
-    const portInput = document.getElementById('elf-port');
-    const payloadSelect = document.getElementById('elf-select');
+function filterAndRenderElf() {
+    const selectedCat = document.getElementById('elf-category-select').value;
+    const elfSelect = document.getElementById('elf-select');
+    elfSelect.innerHTML = '';
 
-    const ip = ipInput ? ipInput.value.trim() : '';
-    const port = portInput ? portInput.value.trim() : '9021';
-    const idx = payloadSelect ? payloadSelect.value : '';
+    const filtered = selectedCat === 'all' 
+        ? allElfPayloads 
+        : allElfPayloads.filter(p => p.category === selectedCat);
 
-    if (!ip) return writeLog('Veuillez renseigner l\'adresse IP de la PS5.', 'error');
-    if (idx === '') return writeLog('Veuillez sélectionner un payload.', 'error');
+    filtered.forEach((p, index) => {
+        const opt = document.createElement('option');
+        opt.value = allElfPayloads.indexOf(p);
+        opt.textContent = p.name + (p.version ? ` (${p.version})` : '');
+        elfSelect.appendChild(opt);
+    });
 
-    const payload = currentFilteredPayloads[idx];
-    if (!payload || !payload.url) return writeLog('URL du payload invalide.', 'error');
+    updateElfDescription();
+}
 
-    writeLog(`[1/2] Téléchargement du payload "${payload.name}"...`, 'info');
+function updateElfDescription() {
+    const idx = document.getElementById('elf-select').value;
+    const descBox = document.getElementById('elf-desc');
+    if (idx !== "" && allElfPayloads[idx]) {
+        descBox.textContent = allElfPayloads[idx].description || "Aucune description.";
+    } else {
+        descBox.textContent = "Sélectionnez un payload pour voir sa description.";
+    }
+}
+
+async function sendElfPayload() {
+    const ip = document.getElementById('ps5-ip').value.trim() || '127.0.0.1';
+    const port = document.getElementById('elf-port').value.trim() || '9021';
+    const idx = document.getElementById('elf-select').value;
+
+    if (idx === "") return log("Veuillez sélectionner un payload.", "error");
+
+    const payload = allElfPayloads[idx];
+    log(`[1/2] Téléchargement du payload ${payload.name}...`, "info");
 
     try {
-        const res = await fetch(payload.url);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const buffer = await res.arrayBuffer();
+        const response = await fetch(payload.url);
+        const buffer = await response.arrayBuffer();
 
-        writeLog(`[2/2] Envoi en cours vers ${ip}:${port}...`, 'warning');
+        log(`[2/2] Envoi vers ${ip}:${port}...`, "warning");
 
-        // Utilisation de XMLHttpRequest + Blob pour la compatibilité WebKit
+        // Utilisation de XHR + Blob (Stream direct compatible WebKit PS5)
         const xhr = new XMLHttpRequest();
         xhr.open('POST', `http://${ip}:${port}/`, true);
         
         xhr.onload = function() {
-            writeLog(`Payload "${payload.name}" injecté avec succès !`, 'success');
+            log(`Payload ${payload.name} envoyé avec succès !`, "success");
         };
 
         xhr.onerror = function() {
-            writeLog(`Échec de connexion à ${ip}:${port}. Vérifiez que le loader TCP est actif.`, 'error');
+            log(`Échec d'envoi vers ${ip}:${port}. Assurez-vous que le loader écoute bien.`, "error");
         };
 
         xhr.send(new Blob([buffer]));
 
-    } catch (err) {
-        writeLog(`Erreur lors du traitement du payload : ${err.message}`, 'error');
+    } catch (e) {
+        log(`Erreur : ${e.message}`, "error");
     }
 }
 
-// 5. Attachement des événements DOM
 document.addEventListener('DOMContentLoaded', () => {
-    loadElfSources();
+    initElfModule();
 
-    const sourceSelect = document.getElementById('elf-source-select');
-    if (sourceSelect) {
-        sourceSelect.addEventListener('change', (e) => {
-            const val = e.target.value;
-            if (val === 'custom') {
-                const url = prompt('URL du fichier JSON de payloads :');
-                if (url) loadElfPayloads(url);
-            } else if (val) {
-                loadElfPayloads(val);
-            }
-        });
-    }
-
-    const payloadSelect = document.getElementById('elf-select');
-    if (payloadSelect) {
-        payloadSelect.addEventListener('change', updateElfDetails);
-    }
-
-    const btnSend = document.getElementById('btn-send-elf');
-    if (btnSend) {
-        btnSend.addEventListener('click', sendElf);
-    }
+    document.getElementById('elf-source-select').addEventListener('change', (e) => loadElfPayloads(e.target.value));
+    document.getElementById('elf-category-select').addEventListener('change', filterAndRenderElf);
+    document.getElementById('elf-select').addEventListener('change', updateElfDescription);
+    document.getElementById('btn-send-elf').addEventListener('click', sendElfPayload);
 });
