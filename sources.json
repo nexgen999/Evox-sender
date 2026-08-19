@@ -1,0 +1,19 @@
+{
+  "elf_sources": [
+    {
+      "name": "Dépôt Principal (nexgen999)",
+      "url": "https://raw.githubusercontent.com/nexgen999/PS5-Super-PLDMGR-Auto-Updater/main/json/payloads.json"
+    },
+    {
+      "name": "Miroir (itsPLK)",
+      "url": "https://raw.githubusercontent.com/itsPLK/ps5-payloads-mirror/main/payloads.json"
+    }
+  ],
+  "pkg_sources": [
+    {
+      "name": "Dépôt Principal (nexgen999)",
+      "url": "https://raw.githubusercontent.com/nexgen999/PS5-Super-PLDMGR-Auto-Updater/main/pkg.json"
+    }
+  ]
+}
+
