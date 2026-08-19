@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PS5 ELF & PKG Manager</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <h1 class="title">PS5 ELF & PKG Manager</h1>
+
+    <!-- Barre de navigation des onglets -->
+    <div class="tabs-nav">
+        <button id="elf-tab-btn" class="tab-btn active" onclick="switchTab('elf-tab', this)">ELF Sender</button>
+        <button id="pkg-tab-btn" class="tab-btn" onclick="switchTab('pkg-tab', this)">PKG Sender</button>
+        <button id="config-tab-btn" class="tab-btn" onclick="switchTab('config-tab', this)">Configuration</button>
+    </div>
+
+    <!-- Vue 1 : ELF Sender -->
+    <div id="elf-tab" class="tab-content active">
+        <div class="card">
+            <div class="card-title">Envoyer un Payload (ELF)</div>
+            
+            <div class="form-group">
+                <label for="elf-source-select">Source des Payloads</label>
+                <select id="elf-source-select"><option value="">Chargement des sources...</option></select>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="elf-category-select">1. Catégorie</label>
+                    <select id="elf-category-select">
+                        <option value="all">-- Toutes les catégories --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="elf-select">2. Payload (ELF)</label>
+                    <select id="elf-select"><option value="">-- Sélectionnez une source --</option></select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Description</label>
+                <div id="elf-desc" class="desc-box">Sélectionnez un payload pour voir sa description.</div>
+            </div>
+
+            <button id="btn-send-elf" class="btn-action">Injecter l'ELF</button>
+        </div>
+    </div>
+
+    <!-- Vue 2 : PKG Sender -->
+    <div id="pkg-tab" class="tab-content">
+        <div class="card">
+            <div class="card-title">Installer un Package (PKG)</div>
+            
+            <div class="form-group">
+                <label for="pkg-source-select">Source des Packages</label>
+                <select id="pkg-source-select"><option value="">Chargement des sources...</option></select>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="pkg-category-select">1. Catégorie</label>
+                    <select id="pkg-category-select">
+                        <option value="all">-- Toutes les catégories --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="pkg-select">2. Package (PKG)</label>
+                    <select id="pkg-select"><option value="">-- Sélectionnez une source --</option></select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Description</label>
+                <div id="pkg-desc" class="desc-box">Sélectionnez un package pour voir sa description.</div>
+            </div>
+
+            <button id="btn-send-pkg" class="btn-action">Installer le PKG</button>
+        </div>
+    </div>
+
+    <!-- Vue 3 : Configuration -->
+    <div id="config-tab" class="tab-content">
+        <div class="card">
+            <div class="card-title">Configuration PS5 & Réseau</div>
+            
+            <div class="form-group">
+                <label for="ps5-ip">Adresse IP de la console PS5</label>
+                <div class="input-with-btn">
+                    <input type="text" id="ps5-ip" placeholder="ex: 192.168.1.50">
+                    <button id="btn-autodetect-ip" class="btn-secondary">Détecter l'IP</button>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="elf-port-default">Port par défaut ELF (elfldr)</label>
+                    <input type="text" id="elf-port-default" value="9021">
+                </div>
+                <div class="form-group">
+                    <label for="pkg-port-default">Port par défaut PKG (Direct PKG Installer)</label>
+                    <input type="text" id="pkg-port-default" value="12800">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Console de statut permanente -->
+    <div class="card">
+        <div class="console-header">
+            <div class="card-title" style="margin:0;">Console de statut</div>
+            <button id="btn-clear-console" class="btn-clear">Effacer</button>
+        </div>
+        <div id="status-console" class="console-box"></div>
+    </div>
+</div>
+
+<!-- Scripts ordonnés par dépendances -->
+<script src="js/logger.js"></script>
+<script src="js/config.js"></script>
+<script src="js/sources.js"></script>
+<script src="js/elf.js"></script>
+<script src="js/pkg.js"></script>
+
+<script>
+    // Navigation simple entre les onglets
+    function switchTab(tabId, btn) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        btn.classList.add('active');
+    }
+</script>
+</body>
+</html>
