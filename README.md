@@ -42,14 +42,16 @@ Le fichier `sources.json` situé à la racine regroupe toutes vos sources de Pay
   ]
 }
 
-elf_sources : Liste des fichiers JSON contenant les objets ELF.
-pkg_sources : Liste des fichiers JSON contenant les liens des packages PKG.
+### elf_sources : Liste des fichiers JSON contenant les objets ELF.
+### pkg_sources : Liste des fichiers JSON contenant les liens des packages PKG.
 
-📄 Formatage des fichiers JSON
+## 📄 Formatage des fichiers JSON
 Pour que les listes soient lues correctement par l'interface, vos fichiers distant payloads.json et pkg.json doivent respecter l'une des structures ci-dessous.
-1. Format pour payloads.json (ELF)
+
+## 1. Format pour payloads.json (ELF)
 L'interface supporte deux types de structures pour les payloads :
-Option A : Structure sous forme de tableau (Recommandé)
+
+### Option A : Structure sous forme de tableau (Recommandé)
 
 [
   {
@@ -68,7 +70,7 @@ Option A : Structure sous forme de tableau (Recommandé)
   }
 ]
 
-Option B : Structure groupée par clés / catégories
+### Option B : Structure groupée par clés / catégories
 
 {
   "Kernel": [
@@ -88,9 +90,10 @@ Option B : Structure groupée par clés / catégories
   ]
 }
 
-2. Format pour pkg.json (PKG)
+## 2. Format pour pkg.json (PKG)
 Deux structures sont reconnues pour la liste des packages :
-Option A : Format dépôt avec la clé "packages" (Standard)
+
+### Option A : Format dépôt avec la clé "packages" (Standard)
 
 {
   "repository": "Mon Dépôt PKG",
@@ -103,7 +106,7 @@ Option A : Format dépôt avec la clé "packages" (Standard)
   ]
 }
 
-Option B : Tableau simple
+### Option B : Tableau simple
 
 [
   {
@@ -113,7 +116,8 @@ Option B : Tableau simple
   }
 ]
 
-🚀 Utilisation
+
+## 🚀 Utilisation
 Ouvrez index.html (vue globale) ou index.1.html (vue avec onglets) dans votre navigateur.
 Renseignez l'adresse IP de votre console PS5 dans le champ Configuration.
 Choisissez une source dans la liste déroulante ou sélectionnez -- Ajouter une URL personnalisée --.
