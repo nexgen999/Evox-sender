@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evox Sender Lite</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --card-bg: #161b22;
+            --border-color: #30363d;
+            --text-color: #c9d1d9;
+            --text-muted: #8b949e;
+            --accent-color: #58a6ff;
+            --accent-hover: #1f6feb;
+            --success-color: #2ea043;
+            --error-color: #f85149;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-family);
+            line-height: 1.5;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1100px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* En-tête */
+        .header-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 5px;
+        }
+
+        .logo-bubble {
+            width: 60px;
+            height: 60px;
+            background-color: var(--card-bg);
+            border: 2px solid var(--accent-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            padding: 5px;
+            overflow: hidden;
+        }
+
+        .logo-bubble img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .title {
+            font-size: 1.8rem;
+            color: var(--accent-color);
+            font-weight: 600;
+        }
+
+        /* Disposition 2 Colonnes */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        .left-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Cartes */
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+
+        /* Formulaires */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 15px;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        input[type="text"], select {
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+            width: 100%;
+        }
+
+        input[type="text"]:focus, select:focus {
+            border-color: var(--accent-color);
+        }
+
+        .input-with-btn {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-with-btn input {
+            flex: 1;
+        }
+
+        /* Boutons */
+        .btn-action {
+            background-color: var(--accent-color);
+            color: #ffffff;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn-action:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            transition: background-color 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--border-color);
+        }
+
+        .btn-clear {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        .btn-clear:hover {
+            color: var(--error-color);
+        }
+
+        /* Boîte de description */
+        .desc-box {
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px 12px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            min-height: 60px;
+        }
+
+        /* Console */
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .console-box {
+            background-color: #000000;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 12px;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 0.8rem;
+            height: 220px;
+            overflow-y: auto;
+            color: #a5d6ff;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        /* Responsive Mobile */
+        @media (max-width: 850px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- En-tête -->
+    <div class="header-container">
+        <div class="logo-bubble">
+            <img src="logo.png" alt="Logo Evox">
+        </div>
+        <h1 class="title">Evox Sender Lite</h1>
+    </div>
+
+    <div class="main-grid">
+        <!-- COLONNE GAUCHE : IP + CONSOLE -->
+        <div class="left-column">
+            <!-- Configuration IP -->
+            <div class="card">
+                <div class="card-title">Configuration PS5</div>
+                <div class="form-group">
+                    <label for="ps5-ip">Adresse IP de la console PS5</label>
+                    <div class="input-with-btn">
+                        <input type="text" id="ps5-ip" placeholder="ex: 127.0.0.1 ou 192.168.1.X">
+                        <button id="btn-autodetect-ip" class="btn-secondary">Détecter l'IP</button>
+                    </div>
+                </div>
+                <!-- Ports masqués mais présents dans le DOM pour compatibilité avec config.js / elf.js -->
+                <input type="hidden" id="elf-port-default" value="9021">
+                <input type="hidden" id="pkg-port-default" value="12800">
+            </div>
+
+            <!-- Console de statut -->
+            <div class="card">
+                <div class="console-header">
+                    <div class="card-title" style="margin:0;">Console de statut</div>
+                    <button id="btn-clear-console" class="btn-clear">Effacer</button>
+                </div>
+                <div id="status-console" class="console-box"></div>
+            </div>
+        </div>
+
+        <!-- COLONNE DROITE : MENU ENVOYER PAYLOAD -->
+        <div class="right-column">
+            <div class="card">
+                <div class="card-title">Envoyer un Payload (ELF)</div>
+                
+                <div class="form-group">
+                    <label for="elf-source-select">Source des Payloads</label>
+                    <select id="elf-source-select"><option value="">Chargement des sources...</option></select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="elf-category-select">1. Catégorie</label>
+                        <select id="elf-category-select">
+                            <option value="all">-- Toutes les catégories --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="elf-select">2. Payload (ELF)</label>
+                        <select id="elf-select"><option value="">-- Sélectionnez une source --</option></select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Description</label>
+                    <div id="elf-desc" class="desc-box">Sélectionnez un payload pour voir sa description.</div>
+                </div>
+
+                <button id="btn-send-elf" class="btn-action">Injecter l'ELF</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chargement des scripts JS originaux -->
+<script src="js/logger.js"></script>
+<script src="js/config.js"></script>
+<script src="js/sources.js"></script>
+<script src="js/elf.js"></script>
+
+<!-- Script pour simuler la présence de la vue PKG attendue par sources.js sans créer d'erreur -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Correctif si sources.js cherche à remplir la partie PKG
+        if (!document.getElementById('pkg-source-select')) {
+            const dummyPkgSource = document.createElement('select');
+            dummyPkgSource.id = 'pkg-source-select';
+            dummyPkgSource.style.display = 'none';
+            document.body.appendChild(dummyPkgSource);
+        }
+        if (!document.getElementById('pkg-category-select')) {
+            const dummyPkgCat = document.createElement('select');
+            dummyPkgCat.id = 'pkg-category-select';
+            dummyPkgCat.style.display = 'none';
+            document.body.appendChild(dummyPkgCat);
+        }
+        if (!document.getElementById('pkg-select')) {
+            const dummyPkg = document.createElement('select');
+            dummyPkg.id = 'pkg-select';
+            dummyPkg.style.display = 'none';
+            document.body.appendChild(dummyPkg);
+        }
+    });
+</script>
+
+</body>
+</html>
